@@ -16,7 +16,10 @@ python scraper.py
 
 Attribution/Credits
 ----
-- ASCII bar charts: https://alexwlchan.net/2018/05/ascii-bar-charts/
+- ASCII bar charts:
+    - https://alexwlchan.net/2018/05/ascii-bar-charts/
+- Kanji grade learned (漢字別漢字配当表) and stroke count data:
+    - Electronic Dictionary Research and Development Group, KANJIDIC dictionary file: https://www.edrdg.org/wiki/index.php/Main_Page#The_KANJIDIC_Project
 
 Future considerations
 ----
