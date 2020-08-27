@@ -2,12 +2,12 @@
 
 from urllib.request import urlretrieve
 from os.path import isfile
+from os import get_terminal_size
 from collections import Counter
 import re
-import os
 from bs4 import BeautifulSoup as BS
 
-terminal_width = os.get_terminal_size().columns
+terminal_width = get_terminal_size().columns
 
 def get_title_elements(soup):
     """Get title elements from the homepage"""
@@ -34,17 +34,17 @@ def extract_kanji(text):
     regex = re.compile(u'[^\u4E00-\u9FFF]+') #CJK Unified Ideographs (kanji unicode)
     return regex.sub('', text)
 
-def print_titles(titles, n):
+def print_titles(titles, num):
     """Prints top n titles"""
-    print("Headlines".center(terminal_width, "_"))
-    print(*titles[:n], sep='\n')
+    print("Headlines: Top {} of {}".format(num, len(titles)).center(terminal_width, "_"))
+    print(*titles[:num], sep='\n')
 
-def display_top_kanji(kanji_cnt, n):
+def display_top_kanji(kanji_cnt, num):
     """Displays bar chart of top n kanji"""
-    print("Top {} Kanji".format(n).center(terminal_width, "_"))
+    print("Kanji: Top {} of {}".format(num, len(kanji_cnt)).center(terminal_width, "_"))
     max_value = kanji_cnt.most_common(1)[0][1]
     increment = max_value/25
-    for kanji, count in kanji_cnt.most_common(n):
+    for kanji, count in kanji_cnt.most_common(num):
         #ASCII bar chart from https://alexwlchan.net/2018/05/ascii-bar-charts/
         bar_chunks, remainder = divmod(int(count * 8/increment), 8)
         bar = '█' * bar_chunks

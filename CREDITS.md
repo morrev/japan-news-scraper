@@ -1,2 +1,0 @@
-- ASCII bar chart:
-    - [MIT License] Copyright (c) 2012-2019 Alex Chan, https://alexwlchan.net/2018/05/ascii-bar-charts/
