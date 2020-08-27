@@ -5,9 +5,10 @@ from os.path import isfile
 from os import get_terminal_size
 from collections import Counter
 import re
+from lxml import etree
 from bs4 import BeautifulSoup as BS
 
-terminal_width = get_terminal_size().columns
+TERMINAL_WIDTH = get_terminal_size().columns
 
 def get_title_elements(soup):
     """Get title elements from the homepage"""
@@ -36,12 +37,12 @@ def extract_kanji(text):
 
 def print_titles(titles, num):
     """Prints top n titles"""
-    print("Headlines: Top {} of {}".format(num, len(titles)).center(terminal_width, "_"))
+    print("Headlines: Top {} of {}".format(num, len(titles)).center(TERMINAL_WIDTH, "_"))
     print(*titles[:num], sep='\n')
 
 def display_top_kanji(kanji_cnt, num):
     """Displays bar chart of top n kanji"""
-    print("Kanji: Top {} of {}".format(num, len(kanji_cnt)).center(terminal_width, "_"))
+    print("Kanji: Top {} of {}".format(num, len(kanji_cnt)).center(TERMINAL_WIDTH, "_"))
     max_value = kanji_cnt.most_common(1)[0][1]
     increment = max_value/25
     for kanji, count in kanji_cnt.most_common(num):
@@ -51,16 +52,43 @@ def display_top_kanji(kanji_cnt, num):
         if remainder > 0:
             bar += chr(ord('█') + (8 - remainder))
         bar = bar or '▏'
+        
         print(f'{kanji.rjust(1)} ▏ {count:#4d} {bar}')
+
+def get_stroke_count(kanji_element):
+    try: 
+        return kanji_element.findtext("misc/stroke_count")
+    except (IndexError, AttributeError):
+        return None
+
+def get_grade(kanji_element):
+    try:
+        return kanji_element.findtext("misc/grade")
+    except (IndexError, AttributeError):
+        return None
+    
+
+def get_kanji_info(kanji, kanji_tree):
+    kanji_element = kanji_tree.xpath("//character[literal = '%s']" % kanji)[0]
+    grade = get_grade(kanji_element)
+    stroke_count = get_stroke_count(kanji_element)
+    return grade, stroke_count
 
 def main():
     """Retrieve and summarize titles from Nikkei Keizai Shimbun."""
     if not isfile('nikkei.html'):
         urlretrieve("https://www.nikkei.com/", "nikkei.html")
+    if not isfile('kanjidic2.xml'):
+        raise FileNotFoundError('File kanjidic2.xml not found in local directory. Install from the KANJIDIC Project at edrdg.org')
+
     soup = BS(open('nikkei.html'), 'html.parser')
     title_elements = get_title_elements(soup)
     titles, kanji_cnt  = parse_titles(title_elements)
     nikkei225 = get_nikkei225(soup)
+    
+    kanji_tree = etree.parse('kanjidic2.xml')
+    character = '試'
+    grade, stroke_count = get_kanji_info(character, kanji_tree)
 
     print_titles(titles, 5)
     display_top_kanji(kanji_cnt, 15)
