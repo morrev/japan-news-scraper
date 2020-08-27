@@ -14,6 +14,10 @@ python scraper.py
 ``` python
 ```
 
+Attribution/Credits
+----
+- ASCII bar charts: https://alexwlchan.net/2018/05/ascii-bar-charts/
+
 Future considerations
 ----
 - Determining word boundaries for Japanese text? (e.g. 国勢調査 > 国勢　調査)
