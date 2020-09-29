@@ -13,7 +13,7 @@ import pandas as pd
 TERMINAL_WIDTH = os.get_terminal_size().columns
 SCRAPE_DIR = 'data'
 SUMMARY_DIR = 'summary'
-TODAY = '20200929'#date.today().strftime("%Y%m%d")
+TODAY = date.today().strftime("%Y%m%d")
 
 def get_title_elements(soup):
     """Get title elements from the homepage"""
@@ -121,8 +121,8 @@ def main():
     nikkei225 = get_nikkei225(soup)
     
     kanji_tree = etree.parse('kanjidic2.xml')
-    character = '試'
-    grade, stroke_count = get_kanji_info(character, kanji_tree)
+    #character = '試'
+    #grade, stroke_count = get_kanji_info(character, kanji_tree)
     
     print_titles(titles, 5)
     display_top_kanji(kanji_cnt, 15)
