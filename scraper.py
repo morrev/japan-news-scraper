@@ -104,7 +104,6 @@ def append_summary_to_file(kanjicnt, filename):
         today_df.to_csv(filepath, index = True)
     elif os.path.isfile(filepath):
         existing_df = pd.read_csv(filepath, index_col = 0)
-        print(existing_df)
         if TODAY in existing_df.columns:
             pass
         else:

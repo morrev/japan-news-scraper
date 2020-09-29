@@ -1,15 +1,15 @@
 japan-news-scraper
 ==========
 
-準備
+Running
 ----
 ``` python
 python scraper.py
 ```
 
-分析
+Current functionality
 ----
-
+![Example](/images/example.png)
 ### WIP
 ``` python
 ```
