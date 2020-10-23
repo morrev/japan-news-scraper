@@ -2,12 +2,13 @@
 
 from urllib.request import urlretrieve
 from collections import Counter
+from datetime import date
 import re
 import os
-import csv
+import argparse
+import heapq as hq
 from lxml import etree
 from bs4 import BeautifulSoup as BS
-from datetime import date
 import pandas as pd
 
 TERMINAL_WIDTH = os.get_terminal_size().columns
@@ -53,16 +54,15 @@ def display_top_kanji(kanji_cnt, num):
     for kanji, count in kanji_cnt.most_common(num):
         #ASCII bar chart from https://alexwlchan.net/2018/05/ascii-bar-charts/
         bar_chunks, remainder = divmod(int(count * 8/increment), 8)
-        bar = '█' * bar_chunks
+        barwidth = '█' * bar_chunks
         if remainder > 0:
-            bar += chr(ord('█') + (8 - remainder))
-        bar = bar or '▏'
-        
-        print(f'{kanji.rjust(1)} ▏ {count:#4d} {bar}')
+            barwidth += chr(ord('█') + (8 - remainder))
+        barwidth = barwidth or '▏'
+        print(f'{kanji.rjust(1)} ▏ {count:#4d} {barwidth}')
 
 def get_stroke_count(kanji_element):
     """Returns stroke count (int) for given ElementTree Element 'kanji_element'"""
-    try: 
+    try:
         return int(kanji_element.findtext("misc/stroke_count"))
     except (IndexError, AttributeError):
         return None
@@ -73,9 +73,9 @@ def get_grade(kanji_element):
         return kanji_element.findtext("misc/grade")
     except (IndexError, AttributeError):
         return None
-    
+
 def get_kanji_info(kanji, kanji_tree):
-    """Returns grade (str) and stroke count (int) for the given kanji based on the lxml ElementTree 'kanji_tree'"""
+    """Returns grade (str) and stroke count (int) for kanji in lxml ElementTree"""
     kanji_element = kanji_tree.xpath("//character[literal = '%s']" % kanji)[0]
     grade = get_grade(kanji_element)
     stroke_count = get_stroke_count(kanji_element)
@@ -89,7 +89,9 @@ def retrieve_today_scrape(scrape_suffix):
     if not os.path.isfile(filepath):
         urlretrieve("https://www.nikkei.com/", filepath)
     if not os.path.isfile('kanjidic2.xml'):
-        raise FileNotFoundError('File kanjidic2.xml not found in local directory. Install from the KANJIDIC Project at edrdg.org')
+        raise FileNotFoundError("""
+        File kanjidic2.xml not found in local directory. 
+        Install from the KANJIDIC Project at edrdg.org""")
     return filepath
 
 def append_summary_to_file(kanjicnt, filename):
@@ -110,22 +112,43 @@ def append_summary_to_file(kanjicnt, filename):
             new_df = existing_df.join(today_df, how='outer')
             new_df.to_csv(filepath, index = True)
 
+def get_difficulties(kanji_cnt, kanji_tree, grade_weight = 1):
+    """Return a dictionary of difficulties (kanji keys, weighted difficulty values)"""
+    difficulties = {}
+    for kanji in kanji_cnt:
+        grade, stroke_count = get_kanji_info(kanji, kanji_tree)
+        if None not in (grade, stroke_count):
+            difficulties[kanji] = grade_weight*int(grade) + (1-grade_weight)*int(stroke_count)
+        else:
+            pass
+    return difficulties
+
+def display_difficulties(difficulties, num):
+    """Prints top n difficulties and mean difficulty"""
+    print("Highest difficulty kanji: Top {} of {}".format(num, len(difficulties)).center(TERMINAL_WIDTH, "_"))
+    hardest = hq.nlargest(num, difficulties, key=difficulties.get)
+    print(*zip(hardest, [difficulties.get(h) for h in hardest]), sep='\n')
+
 def main():
     """Retrieve and summarize titles from Nikkei Keizai Shimbun."""
-    scrape = retrieve_today_scrape('nikkei.html')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--display", help="display today's headlines and most frequent kanji")
+    args = parser.parse_args()
 
+    scrape = retrieve_today_scrape('nikkei.html')
     soup = BS(open(scrape), 'html.parser')
     title_elements = get_title_elements(soup)
     titles, kanji_cnt  = parse_titles(title_elements)
     nikkei225 = get_nikkei225(soup)
-    
     kanji_tree = etree.parse('kanjidic2.xml')
-    #character = '試'
-    #grade, stroke_count = get_kanji_info(character, kanji_tree)
-    
-    print_titles(titles, 5)
-    display_top_kanji(kanji_cnt, 15)
     append_summary_to_file(kanji_cnt, "summary.csv")
+
+    difficulties = get_difficulties(kanji_cnt, kanji_tree)
+    
+    if args.display:
+        print_titles(titles, 5)
+        display_top_kanji(kanji_cnt, 15)
+        display_difficulties(difficulties, 10)
 
 if __name__ == "__main__":
     main()
