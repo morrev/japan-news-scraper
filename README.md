@@ -1,7 +1,7 @@
 japan-news-scraper
 ==========
 
-Simple study aid to display daily headlines, most frequent kanji, and highest difficulty kanji (weighted by grade level, with option to weight by stroke count). 
+Simple study aid to concisely display daily headlines, most frequent kanji, and highest difficulty kanji (weighted by grade level, with option to weight by stroke count). Logs scraped kanji frequencies seen to date in tabular form (summary/summary.csv).
 
 Running
 ----
@@ -30,3 +30,4 @@ Future considerations
 - Determining word boundaries for Japanese text? (e.g. 国勢調査 > 国勢　調査)
 - Time series correlation between Nikkei 225 and sentiment of characters
 - Similarity between most frequent characters across newspapers (and countries)
+- Modeling kanji occurence or stroke count with distributions (e.g. negative hypergeometric: https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.97.7878&rep=rep1&type=pdf)
