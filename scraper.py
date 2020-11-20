@@ -118,7 +118,10 @@ def display_difficulties(difficulties, num):
 def main():
     """Retrieve and summarize titles from Nikkei Keizai Shimbun."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--display", help="display today's headlines and most frequent kanji")
+    parser.add_argument("--d", dest='display',
+                        action='store_true', 
+                        help="display latest headlines and kanji")
+    parser.set_defaults(display=False)
     args = parser.parse_args()
 
     scrape = retrieve_today_scrape('nikkei.html')
@@ -130,7 +133,7 @@ def main():
 
     kanji_dic = KanjiDictionary('inputs/kanjidic2.json').get_dict()
     difficulties = get_difficulties(kanji_cnt, kanji_dic)
-    
+
     if args.display:
         print_titles(titles, 5)
         display_top_kanji(kanji_cnt, 15)
