@@ -119,9 +119,14 @@ def main():
     """Retrieve and summarize titles from Nikkei Keizai Shimbun."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--d", dest='display',
-                        action='store_true', 
-                        help="display latest headlines and kanji")
-    parser.set_defaults(display=False)
+                        action='store_true',
+                        default = False,
+                        help="Display latest headlines and kanji")
+    parser.add_argument("--w", dest='grade_weight',
+                        action='store',
+                        default = 1.0,
+                        type = float,
+                        help="Number between 0.0 and 1.0 indicating grade weight")
     args = parser.parse_args()
 
     scrape = retrieve_today_scrape('nikkei.html')
@@ -132,7 +137,8 @@ def main():
     append_summary_to_file(kanji_cnt, "summary.csv")
 
     kanji_dic = KanjiDictionary('inputs/kanjidic2.json').get_dict()
-    difficulties = get_difficulties(kanji_cnt, kanji_dic)
+    difficulties = get_difficulties(kanji_cnt, kanji_dic,
+                                    grade_weight = args.grade_weight)
 
     if args.display:
         print_titles(titles, 5)
