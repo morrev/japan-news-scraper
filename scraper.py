@@ -1,5 +1,6 @@
 """Retrieves and summarizes titles from Nikkei Keizai Shimbun."""
 
+from kanjidictionary import KanjiDictionary
 from urllib.request import urlretrieve
 from collections import Counter
 from datetime import date
@@ -60,26 +61,15 @@ def display_top_kanji(kanji_cnt, num):
         barwidth = barwidth or '▏'
         print(f'{kanji.rjust(1)} ▏ {count:#4d} {barwidth}')
 
-def get_stroke_count(kanji_element):
-    """Returns stroke count (int) for given ElementTree Element 'kanji_element'"""
+def get_kanji_info(kanji, kanji_dic):
+    """Returns grade (str) and stroke count (int) for kanji through lookup in kanji_dic"""
     try:
-        return int(kanji_element.findtext("misc/stroke_count"))
-    except (IndexError, AttributeError):
-        return None
-
-def get_grade(kanji_element):
-    """Returns grade (str) for given ElementTree Element 'kanji_element'"""
-    try:
-        return kanji_element.findtext("misc/grade")
-    except (IndexError, AttributeError):
-        return None
-
-def get_kanji_info(kanji, kanji_tree):
-    """Returns grade (str) and stroke count (int) for kanji in lxml ElementTree"""
-    kanji_element = kanji_tree.xpath("//character[literal = '%s']" % kanji)[0]
-    grade = get_grade(kanji_element)
-    stroke_count = get_stroke_count(kanji_element)
-    return grade, stroke_count
+        grade = kanji_dic[kanji]['grade']
+        stroke_count = kanji_dic[kanji]['stroke_count']
+        stroke_count = int(stroke_count) if stroke_count.isdigit() else None 
+        return grade, stroke_count
+    except KeyError:
+        return None, None
 
 def retrieve_today_scrape(scrape_suffix):
     """Retrieves filepath of today's scrape from data folder if exists, otherwise creates it"""
@@ -88,10 +78,6 @@ def retrieve_today_scrape(scrape_suffix):
         os.makedirs(SCRAPE_DIR)
     if not os.path.isfile(filepath):
         urlretrieve("https://www.nikkei.com/", filepath)
-    if not os.path.isfile('kanjidic2.xml'):
-        raise FileNotFoundError("""
-        File kanjidic2.xml not found in local directory. 
-        Install from the KANJIDIC Project at edrdg.org""")
     return filepath
 
 def append_summary_to_file(kanjicnt, filename):
@@ -132,7 +118,15 @@ def display_difficulties(difficulties, num):
 def main():
     """Retrieve and summarize titles from Nikkei Keizai Shimbun."""
     parser = argparse.ArgumentParser()
-    parser.add_argument("--display", help="display today's headlines and most frequent kanji")
+    parser.add_argument("--d", dest='display',
+                        action='store_true',
+                        default = False,
+                        help="Display latest headlines and kanji")
+    parser.add_argument("--w", dest='grade_weight',
+                        action='store',
+                        default = 1.0,
+                        type = float,
+                        help="Number between 0.0 and 1.0 indicating grade weight")
     args = parser.parse_args()
 
     scrape = retrieve_today_scrape('nikkei.html')
@@ -140,11 +134,12 @@ def main():
     title_elements = get_title_elements(soup)
     titles, kanji_cnt  = parse_titles(title_elements)
     nikkei225 = get_nikkei225(soup)
-    kanji_tree = etree.parse('kanjidic2.xml')
     append_summary_to_file(kanji_cnt, "summary.csv")
 
-    difficulties = get_difficulties(kanji_cnt, kanji_tree)
-    
+    kanji_dic = KanjiDictionary('inputs/kanjidic2.json').get_dict()
+    difficulties = get_difficulties(kanji_cnt, kanji_dic,
+                                    grade_weight = args.grade_weight)
+
     if args.display:
         print_titles(titles, 5)
         display_top_kanji(kanji_cnt, 15)
