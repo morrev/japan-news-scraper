@@ -3,11 +3,19 @@ japan-news-scraper
 
 Simple study aid to display daily headlines, most frequent kanji, and highest difficulty kanji (based on grade level and stroke count).
 The difficulty is defined as: `(grade_weight)*(grade level) + (1 - grade_weight)*(stroke count)`
-By default the grade_weight is set to 1.
+By default the grade_weight is set to 1 (i.e. by default, do not consider stroke count).
 
 Running
 ----
-Displaying top kanji on the Nikkei homepage by difficulty, with equal weights for kanji grade level and stroke count:
+Running scraper.py without arguments appends the latest kanji frequencies (extracted from the Nikkei 225 homepage) to summary/summary.csv:  
+``` python
+python scraper.py
+```
+Arguments:
+- `--d` displays the scraping output (otherwise, silently scrapes and appends to csv)
+- `--w 0.5` sets the grade weight to 0.5
+
+For example, to display top kanji on the Nikkei homepage by difficulty, with equal weights for kanji grade level and stroke count:
 ``` python
 python scraper.py --d --w 0.5
 ```

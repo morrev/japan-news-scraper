@@ -1,7 +1,7 @@
 """Retrieves and summarizes titles from Nikkei Keizai Shimbun."""
 
 from kanjidictionary import KanjiDictionary
-from urllib.request import urlretrieve
+from urllib.request import urlretrieve, urlopen
 from collections import Counter
 from datetime import date
 import re
@@ -19,7 +19,7 @@ TODAY = date.today().strftime("%Y%m%d")
 
 def get_title_elements(soup):
     """Get title elements from the homepage"""
-    title_elements = soup.select('span[class*="k-card__title-piece"]')
+    title_elements = soup.select('article')
     return title_elements
 
 def parse_titles(title_elements):
@@ -32,9 +32,10 @@ def parse_titles(title_elements):
         kanji_cnt += Counter(extract_kanji(clean_title))
     return titles, kanji_cnt
 
-def get_nikkei225(soup):
+def get_nikkei225():
     """Return Nikkei index."""
-    nikkei225 = soup.select_one('span[class*="k-hub-market__current-price"]').text
+    soup = BS(urlopen("https://www.nikkei.com/markets/worldidx/chart/nk225/"), 'html.parser')
+    nikkei225 = soup.select_one('span[class^="economic_value_now"]').text
     return nikkei225
 
 def extract_kanji(text):
@@ -42,8 +43,9 @@ def extract_kanji(text):
     regex = re.compile(u'[^\u4E00-\u9FFF]+') #CJK Unified Ideographs (kanji unicode)
     return regex.sub('', text)
 
-def print_titles(titles, num):
+def print_titles(titles, num, nikkei225):
     """Prints top n titles"""
+    print("NIKKEI 225: {}".format(nikkei225).center(TERMINAL_WIDTH, "="))
     print("Headlines: Top {} of {}".format(num, len(titles)).center(TERMINAL_WIDTH, "_"))
     print(*titles[:num], sep='\n')
 
@@ -133,7 +135,7 @@ def main():
     soup = BS(open(scrape), 'html.parser')
     title_elements = get_title_elements(soup)
     titles, kanji_cnt  = parse_titles(title_elements)
-    nikkei225 = get_nikkei225(soup)
+    nikkei225 = get_nikkei225()
     append_summary_to_file(kanji_cnt, "summary.csv")
 
     kanji_dic = KanjiDictionary('inputs/kanjidic2.json').get_dict()
@@ -141,7 +143,7 @@ def main():
                                     grade_weight = args.grade_weight)
 
     if args.display:
-        print_titles(titles, 5)
+        print_titles(titles, 5, nikkei225)
         display_top_kanji(kanji_cnt, 15)
         display_difficulties(difficulties, 10)
 
